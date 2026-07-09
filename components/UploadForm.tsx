@@ -6,12 +6,41 @@ export default function UploadForm() {
   const [activeTab, setActiveTab] = useState<"youtube" | "file">("youtube");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [resultUrl, setResultUrl] = useState<string | null>(null);
+
+  const handleUpload = async () => {
+    if (activeTab === "file" && selectedFile) {
+      setUploading(true);
+      setResultUrl(null);
+
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (data.result?.secure_url) {
+          setResultUrl(data.result.secure_url);
+        } else {
+          console.error(data.error);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
 
   return (
-    <div className="mx-auto max-w-xl w-100 h-100 rounded-2xl bg-white p-8 shadow-md">
+    <div className="mx-auto max-w-xl w-500 h-100 rounded-2xl bg-white p-8 shadow-md">
       <h2 className="mb-6 text-xl font-bold text-gray-900">Upload a Video</h2>
 
-      {/* Tab buttons */}
       <div className="mb-6 flex rounded-lg bg-gray-100 p-1">
         <button
           onClick={() => setActiveTab("youtube")}
@@ -60,7 +89,7 @@ export default function UploadForm() {
               type="file"
               accept="video/*"
               onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)}
-              className="text-sm text-gray-600 "
+              className="text-sm text-gray-600"
             />
           </div>
           {selectedFile && (
@@ -72,10 +101,21 @@ export default function UploadForm() {
       )}
 
       <button
-        className="mt-6 w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+        onClick={handleUpload}
+        disabled={uploading}
+        className="mt-6 w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
       >
-        Upload
+        {uploading ? "Uploading..." : "Upload"}
       </button>
+
+      {resultUrl && (
+        <div className="mt-4 rounded-md bg-green-50 p-3 text-sm text-green-700">
+          Upload successful!{" "}
+          <a href={resultUrl} target="_blank" className="underline">
+            View video
+          </a>
+        </div>
+      )}
     </div>
   );
 }
