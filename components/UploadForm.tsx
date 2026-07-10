@@ -9,33 +9,64 @@ export default function UploadForm() {
   const [uploading, setUploading] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
 
+  
+
   const handleUpload = async () => {
-    if (activeTab === "file" && selectedFile) {
-      setUploading(true);
-      setResultUrl(null);
+  // Youtube tab
+  if (activeTab === "youtube" && youtubeUrl) {
+    setUploading(true);
+    setResultUrl(null);
 
-      const formData = new FormData();
-      formData.append("file", selectedFile);
+    try {
+      const res = await fetch("/api/youtube-metadata", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: youtubeUrl }),
+      });
+      const data = await res.json();
 
-      try {
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          body: formData,
-        });
-        const data = await res.json();
-
-        if (data.result?.secure_url) {
-          setResultUrl(data.result.secure_url);
-        } else {
-          console.error(data.error);
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setUploading(false);
+      if (data.error) {
+        console.error(data.error);
+        alert("Error: " + data.error);
+      } else {
+        setResultUrl(data.thumbnail); // just to visually confirm it worked for now
+        console.log("YouTube metadata:", data);
       }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
     }
-  };
+    return;
+  }
+
+  // File tab
+  if (activeTab === "file" && selectedFile) {
+    setUploading(true);
+    setResultUrl(null);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+
+      if (data.result?.secure_url) {
+        setResultUrl(data.result.secure_url);
+      } else {
+        console.error(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
+  }
+};
 
   return (
     <div className="mx-auto max-w-xl w-500 h-100 rounded-2xl bg-white p-8 shadow-md">

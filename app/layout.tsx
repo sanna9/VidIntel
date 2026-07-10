@@ -1,12 +1,9 @@
 import Providers from "./providers";
 import Navbar from "@/components/Navbar";
 import "./globals.css";
+import { PropsWithChildren } from "react";
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: PropsWithChildren)  {
   return (
     <html lang="en">
       <body>
