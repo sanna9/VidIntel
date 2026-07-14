@@ -9,9 +9,7 @@ export default function UploadForm() {
   const [uploading, setUploading] = useState(false);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
 
-  
-
-  const handleUpload = async () => {
+const handleUpload = async () => {
   // Youtube tab
   if (activeTab === "youtube" && youtubeUrl) {
     setUploading(true);
@@ -26,12 +24,25 @@ export default function UploadForm() {
       const data = await res.json();
 
       if (data.error) {
-        console.error(data.error);
         alert("Error: " + data.error);
-      } else {
-        setResultUrl(data.thumbnail); // just to visually confirm it worked for now
-        console.log("YouTube metadata:", data);
+        return;
       }
+
+      //save video entry to mongodb
+      const saveRes = await fetch("/api/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: data.title,
+          videoType: "youtube",
+          youtubeVideoId: data.videoId,
+          thumbnail: data.thumbnail,
+        }),
+      });
+      const saveData = await saveRes.json();
+      console.log("Saved video:", saveData);
+
+      setResultUrl(data.thumbnail);
     } catch (err) {
       console.error(err);
     } finally {
@@ -55,11 +66,26 @@ export default function UploadForm() {
       });
       const data = await res.json();
 
-      if (data.result?.secure_url) {
-        setResultUrl(data.result.secure_url);
-      } else {
+      if (!data.result?.secure_url) {
         console.error(data.error);
+        return;
       }
+
+      // save video entry to mongodb
+      const saveRes = await fetch("/api/videos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: selectedFile.name,
+          videoType: "file",
+          cloudinaryUrl: data.result.secure_url,
+          thumbnail: data.result.secure_url,
+        }),
+      });
+      const saveData = await saveRes.json();
+      console.log("Saved video:", saveData);
+
+      setResultUrl(data.result.secure_url);
     } catch (err) {
       console.error(err);
     } finally {
